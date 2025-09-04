@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}إضافة عميل جديد - نظام إدارة الأعمال{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="page-title" style="margin: 0;">
+        <i class="fas fa-user-plus"></i>
+        إضافة عميل جديد
+    </h1>
+    <a href="{{ url_for('customers') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-right"></i>
+        العودة للعملاء
+    </a>
+</div>
+
+<div class="form-container">
+    <form method="POST">
+        <div class="form-group">
+            <label for="name">
+                <i class="fas fa-user"></i>
+                الاسم الكامل *
+            </label>
+            <input type="text" id="name" name="name" class="form-control" required 
+                   placeholder="أدخل اسم العميل الكامل">
+        </div>
+
+        <div class="form-group">
+            <label for="email">
+                <i class="fas fa-envelope"></i>
+                البريد الإلكتروني
+            </label>
+            <input type="email" id="email" name="email" class="form-control" 
+                   placeholder="example@email.com">
+            <small style="color: #666;">اختياري - سيتم استخدامه لإرسال الإشعارات</small>
+        </div>
+
+        <div class="form-group">
+            <label for="phone">
+                <i class="fas fa-phone"></i>
+                رقم الهاتف
+            </label>
+            <input type="tel" id="phone" name="phone" class="form-control" 
+                   placeholder="01234567890">
+            <small style="color: #666;">اختياري - للتواصل مع العميل</small>
+        </div>
+
+        <div class="form-group">
+            <label for="city">
+                <i class="fas fa-city"></i>
+                المدينة
+            </label>
+            <input type="text" id="city" name="city" class="form-control" 
+                   placeholder="القاهرة، الإسكندرية، الجيزة...">
+        </div>
+
+        <div class="form-group">
+            <label for="address">
+                <i class="fas fa-map-marker-alt"></i>
+                العنوان التفصيلي
+            </label>
+            <textarea id="address" name="address" class="form-control" rows="3" 
+                      placeholder="العنوان الكامل للعميل (الشارع، المنطقة، المعالم...)"></textarea>
+            <small style="color: #666;">اختياري - سيساعد في توصيل الطلبات</small>
+        </div>
+
+        <div class="d-flex gap-2 justify-content-center">
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-save"></i>
+                حفظ العميل
+            </button>
+            <button type="reset" class="btn btn-warning">
+                <i class="fas fa-undo"></i>
+                إعادة تعيين
+            </button>
+            <a href="{{ url_for('customers') }}" class="btn btn-secondary">
+                <i class="fas fa-times"></i>
+                إلغاء
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- نصائح مفيدة -->
+<div class="sidebar" style="max-width: 600px; margin: 2rem auto;">
+    <h3 class="sidebar-title">
+        <i class="fas fa-lightbulb"></i>
+        نصائح مفيدة
+    </h3>
+    <ul style="list-style: none; padding: 0;">
+        <li style="padding: 0.5rem 0; border-bottom: 1px solid #eee;">
+            <i class="fas fa-check text-success"></i>
+            <strong>الاسم الكامل مطلوب</strong> - تأكد من كتابة الاسم بوضوح
+        </li>
+        <li style="padding: 0.5rem 0; border-bottom: 1px solid #eee;">
+            <i class="fas fa-info-circle text-primary"></i>
+            <strong>البريد الإلكتروني</strong> - مفيد لإرسال فواتير وإشعارات
+        </li>
+        <li style="padding: 0.5rem 0; border-bottom: 1px solid #eee;">
+            <i class="fas fa-phone text-warning"></i>
+            <strong>رقم الهاتف</strong> - ضروري للتواصل وتأكيد الطلبات
+        </li>
+        <li style="padding: 0.5rem 0;">
+            <i class="fas fa-map-marker-alt text-danger"></i>
+            <strong>العنوان التفصيلي</strong> - يساعد في توصيل الطلبات بدقة
+        </li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// تحسين تجربة المستخدم
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const nameInput = document.getElementById('name');
+    const phoneInput = document.getElementById('phone');
+    
+    // التركيز على حقل الاسم عند تحميل الصفحة
+    nameInput.focus();
+    
+    // تنسيق رقم الهاتف أثناء الكتابة
+    phoneInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, ''); // إزالة كل ما ليس رقم
+        if (value.length > 11) {
+            value = value.substring(0, 11); // الحد الأقصى 11 رقم
+        }
+        e.target.value = value;
+    });
+    
+    // تأكيد قبل إعادة التعيين
+    document.querySelector('button[type="reset"]').addEventListener('click', function(e) {
+        if (!confirm('هل أنت متأكد من إعادة تعيين جميع الحقول؟')) {
+            e.preventDefault();
+        }
+    });
+    
+    // التحقق من صحة البيانات قبل الإرسال
+    form.addEventListener('submit', function(e) {
+        const name = nameInput.value.trim();
+        const email = document.getElementById('email').value.trim();
+        const phone = phoneInput.value.trim();
+        
+        if (!name) {
+            alert('يرجى إدخال اسم العميل');
+            nameInput.focus();
+            e.preventDefault();
+            return;
+        }
+        
+        if (email && !isValidEmail(email)) {
+            alert('يرجى إدخال بريد إلكتروني صحيح');
+            document.getElementById('email').focus();
+            e.preventDefault();
+            return;
+        }
+        
+        if (phone && (phone.length < 10 || phone.length > 11)) {
+            alert('يرجى إدخال رقم هاتف صحيح (10-11 رقم)');
+            phoneInput.focus();
+            e.preventDefault();
+            return;
+        }
+    });
+});
+
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+</script>
+{% endblock %}

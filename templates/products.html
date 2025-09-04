@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}المنتجات - نظام إدارة الأعمال{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="page-title" style="margin: 0;">
+        <i class="fas fa-box"></i>
+        إدارة المنتجات
+    </h1>
+    <a href="{{ url_for('add_product') }}" class="btn btn-success">
+        <i class="fas fa-plus"></i>
+        إضافة منتج جديد
+    </a>
+</div>
+
+{% if products %}
+<div class="table-container">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>اسم المنتج</th>
+                <th>السعر</th>
+                <th>التكلفة</th>
+                <th>الربح</th>
+                <th>المخزون</th>
+                <th>الحالة</th>
+                <th>الفئة</th>
+                <th>تاريخ الإضافة</th>
+                <th>الإجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+            <tr>
+                <td>{{ product.id }}</td>
+                <td>
+                    <strong>{{ product.name }}</strong>
+                    {% if product.description %}
+                        <br><small style="color: #666;">{{ product.description[:50] }}{% if product.description|length > 50 %}...{% endif %}</small>
+                    {% endif %}
+                </td>
+                <td>
+                    <strong style="color: #28a745;">{{ "%.2f"|format(product.price) }} ج.م</strong>
+                </td>
+                <td>
+                    <span style="color: #dc3545;">{{ "%.2f"|format(product.cost) }} ج.م</span>
+                </td>
+                <td>
+                    {% set profit = product.price - product.cost %}
+                    {% set profit_percent = ((profit / product.cost) * 100) if product.cost > 0 else 0 %}
+                    <span style="color: {% if profit > 0 %}#28a745{% else %}#dc3545{% endif %};">
+                        {{ "%.2f"|format(profit) }} ج.م
+                        <br><small>({{ "%.1f"|format(profit_percent) }}%)</small>
+                    </span>
+                </td>
+                <td>
+                    <div style="text-align: center;">
+                        <strong class="{% if product.stock_quantity <= product.min_stock_level %}low-stock{% endif %}">
+                            {{ product.stock_quantity }}
+                        </strong>
+                        <br><small style="color: #666;">الحد الأدنى: {{ product.min_stock_level }}</small>
+                    </div>
+                </td>
+                <td>
+                    {% if product.stock_quantity <= 0 %}
+                        <span class="status" style="background-color: #dc3545; color: white;">نفد المخزون</span>
+                    {% elif product.stock_quantity <= product.min_stock_level %}
+                        <span class="status" style="background-color: #ffc107; color: #333;">مخزون منخفض</span>
+                    {% else %}
+                        <span class="status" style="background-color: #28a745; color: white;">متوفر</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if product.category %}
+                        <span style="background-color: #667eea; color: white; padding: 0.25rem 0.5rem; border-radius: 10px; font-size: 0.8rem;">
+                            {{ product.category.name }}
+                        </span>
+                    {% else %}
+                        <span style="color: #999;">غير محدد</span>
+                    {% endif %}
+                </td>
+                <td>{{ product.created_at.strftime('%Y-%m-%d') }}</td>
+                <td>
+                    <div class="d-flex gap-1">
+                        <button class="btn btn-primary btn-sm" onclick="viewProduct({{ product.id }})">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-warning btn-sm" onclick="editProduct({{ product.id }})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-success btn-sm" onclick="updateStock({{ product.id }}, '{{ product.name }}', {{ product.stock_quantity }})">
+                            <i class="fas fa-warehouse"></i>
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteProduct({{ product.id }}, '{{ product.name }}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- إحصائيات المنتجات -->
+<div class="cards-grid" style="margin-top: 2rem;">
+    <div class="card">
+        <div class="card-title">إجمالي المنتجات</div>
+        <div class="card-value">{{ products|length }}</div>
+    </div>
+    <div class="card">
+        <div class="card-title">منتجات متوفرة</div>
+        <div class="card-value">{{ products|selectattr('stock_quantity', 'gt', 0)|list|length }}</div>
+    </div>
+    <div class="card">
+        <div class="card-title">منتجات منخفضة المخزون</div>
+        <div class="card-value" style="color: #dc3545;">
+            {{ products|selectattr('stock_quantity', 'le', 'min_stock_level')|list|length }}
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-title">قيمة المخزون الإجمالية</div>
+        <div class="card-value">
+            {% set total_stock_value = products|sum(attribute='stock_quantity')|multiply_by_price %}
+            {{ "%.0f"|format(products|map(attribute='stock_quantity')|sum) }} قطعة
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="text-center" style="padding: 3rem;">
+    <i class="fas fa-box" style="font-size: 4rem; color: #ccc; margin-bottom: 1rem;"></i>
+    <h3 style="color: #666;">لا توجد منتجات بعد</h3>
+    <p style="color: #999; margin-bottom: 2rem;">ابدأ بإضافة منتجاتك الأولى</p>
+    <a href="{{ url_for('add_product') }}" class="btn btn-success">
+        <i class="fas fa-plus"></i>
+        إضافة منتج جديد
+    </a>
+</div>
+{% endif %}
+
+<!-- نموذج تحديث المخزون -->
+<div id="stockModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 2rem; border-radius: 10px; max-width: 400px; width: 90%;">
+        <h3 style="margin-bottom: 1rem; text-align: center;">تحديث المخزون</h3>
+        <form id="stockForm">
+            <input type="hidden" id="productId">
+            <div class="form-group">
+                <label>اسم المنتج:</label>
+                <div id="productName" style="font-weight: bold; padding: 0.5rem; background: #f8f9fa; border-radius: 5px;"></div>
+            </div>
+            <div class="form-group">
+                <label>الكمية الحالية:</label>
+                <div id="currentStock" style="font-weight: bold; padding: 0.5rem; background: #f8f9fa; border-radius: 5px;"></div>
+            </div>
+            <div class="form-group">
+                <label for="newStock">الكمية الجديدة:</label>
+                <input type="number" id="newStock" class="form-control" min="0" required>
+            </div>
+            <div class="d-flex gap-2 justify-content-center">
+                <button type="submit" class="btn btn-success">حفظ</button>
+                <button type="button" onclick="closeStockModal()" class="btn btn-secondary">إلغاء</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function viewProduct(productId) {
+    alert(`عرض تفاصيل المنتج رقم ${productId}`);
+}
+
+function editProduct(productId) {
+    window.location.href = `/products/edit/${productId}`;
+}
+
+function updateStock(productId, productName, currentStock) {
+    document.getElementById('productId').value = productId;
+    document.getElementById('productName').textContent = productName;
+    document.getElementById('currentStock').textContent = currentStock + ' قطعة';
+    document.getElementById('newStock').value = currentStock;
+    document.getElementById('stockModal').style.display = 'block';
+    document.getElementById('newStock').focus();
+}
+
+function closeStockModal() {
+    document.getElementById('stockModal').style.display = 'none';
+}
+
+function deleteProduct(productId, productName) {
+    if (confirm(`هل أنت متأكد من حذف المنتج "${productName}"؟\nهذا الإجراء لا يمكن التراجع عنه.`)) {
+        alert('سيتم تنفيذ عملية الحذف');
+    }
+}
+
+// معالجة نموذج تحديث المخزون
+document.getElementById('stockForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const productId = document.getElementById('productId').value;
+    const newStock = document.getElementById('newStock').value;
+    
+    // في التطبيق الحقيقي، ستقوم بإرسال البيانات إلى الخادم
+    alert(`تم تحديث مخزون المنتج ${productId} إلى ${newStock} قطعة`);
+    closeStockModal();
+    location.reload(); // إعادة تحميل الصفحة لعرض التحديثات
+});
+
+// إغلاق النافذة المنبثقة عند النقر خارجها
+document.getElementById('stockModal').onclick = function(event) {
+    if (event.target === this) {
+        closeStockModal();
+    }
+}
+
+// تمييز المنتجات منخفضة المخزون
+document.addEventListener('DOMContentLoaded', function() {
+    const lowStockElements = document.querySelectorAll('.low-stock');
+    lowStockElements.forEach(element => {
+        element.closest('tr').style.backgroundColor = '#fff5f5';
+    });
+});
+</script>
+{% endblock %}

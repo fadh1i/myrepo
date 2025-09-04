@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>فتح نظام إدارة الأعمال</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            direction: rtl;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+            padding: 50px 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            padding: 3rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: #667eea;
+        }
+        
+        .icon {
+            font-size: 4rem;
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+        
+        p {
+            font-size: 1.2rem;
+            margin: 1rem 0;
+            line-height: 1.6;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin: 1rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        .credentials {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin: 2rem 0;
+            border-right: 4px solid #667eea;
+        }
+        
+        .status {
+            margin-top: 2rem;
+            padding: 1rem;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .instructions {
+            text-align: right;
+            margin: 2rem 0;
+        }
+        
+        .instructions ol {
+            padding-right: 2rem;
+        }
+        
+        .instructions li {
+            margin: 0.5rem 0;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">🏢</div>
+        <h1>نظام إدارة الأعمال</h1>
+        <p><strong>مرحباً بك في نظام إدارة الأعمال الشامل!</strong></p>
+        
+        <div class="credentials">
+            <h3>🔑 بيانات تسجيل الدخول:</h3>
+            <p><strong>اسم المستخدم:</strong> admin</p>
+            <p><strong>كلمة المرور:</strong> admin123</p>
+        </div>
+        
+        <a href="http://localhost:5000" class="btn" target="_blank">
+            🚀 فتح نظام إدارة الأعمال
+        </a>
+        
+        <div class="instructions">
+            <h3>📋 خطوات الاستخدام:</h3>
+            <ol>
+                <li>اضغط على زر "فتح نظام إدارة الأعمال" أعلاه</li>
+                <li>أدخل بيانات تسجيل الدخول المذكورة</li>
+                <li>ابدأ بإضافة عملائك ومنتجاتك</li>
+                <li>أنشئ طلبات جديدة وتابع مبيعاتك</li>
+            </ol>
+        </div>
+        
+        <div id="status" class="status" style="display: none;"></div>
+        
+        <script>
+            // فحص حالة التطبيق
+            function checkAppStatus() {
+                fetch('http://localhost:5000')
+                    .then(response => {
+                        const statusDiv = document.getElementById('status');
+                        if (response.ok || response.status === 302) {
+                            statusDiv.className = 'status success';
+                            statusDiv.innerHTML = '✅ التطبيق يعمل بنجاح! يمكنك فتحه الآن.';
+                            statusDiv.style.display = 'block';
+                        } else {
+                            throw new Error('التطبيق لا يعمل');
+                        }
+                    })
+                    .catch(error => {
+                        const statusDiv = document.getElementById('status');
+                        statusDiv.className = 'status error';
+                        statusDiv.innerHTML = '❌ التطبيق لا يعمل حالياً. تأكد من تشغيله أولاً.';
+                        statusDiv.style.display = 'block';
+                    });
+            }
+            
+            // فحص الحالة عند تحميل الصفحة
+            window.addEventListener('load', checkAppStatus);
+            
+            // فحص الحالة كل 5 ثوانٍ
+            setInterval(checkAppStatus, 5000);
+        </script>
+    </div>
+</body>
+</html>
