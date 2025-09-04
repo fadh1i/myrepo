@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة الأعمال - الصفحة الرئيسية</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            direction: rtl;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: white;
+            color: #333;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #667eea;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        
+        .big-button {
+            display: inline-block;
+            padding: 20px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 15px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 20px;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .big-button:hover {
+            transform: translateY(-3px);
+        }
+        
+        .info-box {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-right: 4px solid #667eea;
+        }
+        
+        .credentials {
+            background: #e8f4f8;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-size: 1.2rem;
+        }
+        
+        .url-box {
+            background: #333;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 1.3rem;
+            margin: 20px 0;
+            cursor: pointer;
+            user-select: all;
+        }
+        
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏢 نظام إدارة الأعمال</h1>
+        
+        <div class="info-box">
+            <h3>مرحباً! التطبيق جاهز للاستخدام</h3>
+            <p>انقر على الزر أدناه أو انسخ الرابط والصقه في متصفح جديد</p>
+        </div>
+        
+        <button class="big-button" onclick="openApp()">
+            🚀 فتح نظام إدارة الأعمال
+        </button>
+        
+        <div class="url-box" onclick="copyUrl()">
+            http://localhost:5000
+            <br><small style="color: #aaa;">انقر لنسخ الرابط</small>
+        </div>
+        
+        <div class="credentials">
+            <h3>🔑 بيانات تسجيل الدخول:</h3>
+            <p><strong>اسم المستخدم:</strong> admin</p>
+            <p><strong>كلمة المرور:</strong> admin123</p>
+        </div>
+        
+        <div id="status" class="status warning">
+            ⏳ جاري فحص حالة التطبيق...
+        </div>
+        
+        <div class="info-box">
+            <h4>📋 خطوات سريعة:</h4>
+            <ol style="text-align: right;">
+                <li>اضغط الزر الأزرق أعلاه</li>
+                <li>أو انسخ الرابط والصقه في متصفح جديد</li>
+                <li>أدخل بيانات الدخول</li>
+                <li>استمتع بإدارة أعمالك!</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function openApp() {
+            const url = 'http://localhost:5000';
+            const newWindow = window.open(url, '_blank');
+            
+            if (newWindow) {
+                updateStatus('✅ تم فتح التطبيق في نافذة جديدة!', 'success');
+            } else {
+                updateStatus('⚠️ لم يتم فتح النافذة. انسخ الرابط أدناه والصقه في متصفح جديد.', 'warning');
+            }
+        }
+        
+        function copyUrl() {
+            const url = 'http://localhost:5000';
+            navigator.clipboard.writeText(url).then(() => {
+                updateStatus('📋 تم نسخ الرابط! الصقه في متصفح جديد.', 'success');
+            }).catch(() => {
+                updateStatus('انسخ هذا الرابط يدوياً: http://localhost:5000', 'warning');
+            });
+        }
+        
+        function updateStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+        
+        function checkStatus() {
+            fetch('http://localhost:5000')
+                .then(response => {
+                    if (response.ok || response.status === 302) {
+                        updateStatus('✅ التطبيق يعمل بنجاح! يمكنك فتحه الآن.', 'success');
+                    } else {
+                        throw new Error('لا يعمل');
+                    }
+                })
+                .catch(() => {
+                    updateStatus('❌ التطبيق لا يعمل حالياً. تأكد من تشغيله أولاً.', 'error');
+                });
+        }
+        
+        // فحص الحالة عند التحميل
+        setTimeout(checkStatus, 1000);
+        setInterval(checkStatus, 10000);
+    </script>
+</body>
+</html>
