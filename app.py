@@ -361,4 +361,11 @@ if __name__ == '__main__':
         create_admin_user()
         create_sample_data()
     
+    print("🚀 تم تشغيل نظام إدارة الأعمال بنجاح!")
+    print("🌐 افتح المتصفح واذهب إلى: http://localhost:5000")
+    print("🔑 بيانات الدخول:")
+    print("   اسم المستخدم: admin")
+    print("   كلمة المرور: admin123")
+    print("=" * 50)
+    
     app.run(debug=True, host='0.0.0.0', port=5000)

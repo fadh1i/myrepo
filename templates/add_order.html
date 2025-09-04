@@ -91,7 +91,7 @@
 <script>
 let orderItems = [];
 let itemCounter = 0;
-const products = {{ products|tojson }};
+const products = {{ products|tojson|safe }};
 
 function addOrderItem() {
     itemCounter++;
