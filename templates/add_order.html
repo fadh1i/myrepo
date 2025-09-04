@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}إنشاء طلب جديد - نظام إدارة الأعمال{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="page-title" style="margin: 0;">
+        <i class="fas fa-plus"></i>
+        إنشاء طلب جديد
+    </h1>
+    <a href="{{ url_for('orders') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-right"></i>
+        العودة للطلبات
+    </a>
+</div>
+
+<div class="form-container">
+    <form method="POST" id="orderForm">
+        <div class="form-group">
+            <label for="customer_id">
+                <i class="fas fa-user"></i>
+                العميل *
+            </label>
+            <select id="customer_id" name="customer_id" class="form-control" required>
+                <option value="">اختر العميل</option>
+                {% for customer in customers %}
+                <option value="{{ customer.id }}">{{ customer.name }} - {{ customer.phone or 'بدون هاتف' }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>
+                <i class="fas fa-box"></i>
+                أصناف الطلب *
+            </label>
+            <div id="orderItems">
+                <!-- سيتم إضافة الأصناف هنا -->
+            </div>
+            <button type="button" class="btn btn-primary" onclick="addOrderItem()">
+                <i class="fas fa-plus"></i>
+                إضافة صنف
+            </button>
+        </div>
+
+        <div class="form-group">
+            <label for="notes">
+                <i class="fas fa-sticky-note"></i>
+                ملاحظات
+            </label>
+            <textarea id="notes" name="notes" class="form-control" rows="3" 
+                      placeholder="أي ملاحظات إضافية للطلب (اختياري)"></textarea>
+        </div>
+
+        <!-- ملخص الطلب -->
+        <div id="orderSummary" class="sidebar" style="margin: 2rem 0; display: none;">
+            <h3 class="sidebar-title">
+                <i class="fas fa-receipt"></i>
+                ملخص الطلب
+            </h3>
+            <div id="summaryContent"></div>
+            <div style="border-top: 2px solid #667eea; padding-top: 1rem; margin-top: 1rem;">
+                <div class="d-flex justify-content-between">
+                    <strong>المجموع الإجمالي:</strong>
+                    <strong id="totalAmount" style="color: #28a745; font-size: 1.2rem;">0.00 ج.م</strong>
+                </div>
+            </div>
+        </div>
+
+        <input type="hidden" name="items" id="itemsData">
+
+        <div class="d-flex gap-2 justify-content-center">
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-save"></i>
+                حفظ الطلب
+            </button>
+            <button type="reset" class="btn btn-warning" onclick="resetForm()">
+                <i class="fas fa-undo"></i>
+                إعادة تعيين
+            </button>
+            <a href="{{ url_for('orders') }}" class="btn btn-secondary">
+                <i class="fas fa-times"></i>
+                إلغاء
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let orderItems = [];
+let itemCounter = 0;
+const products = {{ products|tojson }};
+
+function addOrderItem() {
+    itemCounter++;
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'order-item';
+    itemDiv.id = `item_${itemCounter}`;
+    itemDiv.style.cssText = 'border: 1px solid #ddd; padding: 1rem; margin-bottom: 1rem; border-radius: 5px; background: #f8f9fa;';
+    
+    itemDiv.innerHTML = `
+        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 1rem; align-items: end;">
+            <div class="form-group" style="margin: 0;">
+                <label>المنتج</label>
+                <select class="form-control product-select" onchange="updateItemPrice(${itemCounter})">
+                    <option value="">اختر المنتج</option>
+                    ${products.map(p => `<option value="${p.id}" data-price="${p.price}" data-stock="${p.stock_quantity}">${p.name} - (متوفر: ${p.stock_quantity})</option>`).join('')}
+                </select>
+            </div>
+            <div class="form-group" style="margin: 0;">
+                <label>الكمية</label>
+                <input type="number" class="form-control quantity-input" min="1" value="1" onchange="updateItemTotal(${itemCounter})">
+            </div>
+            <div class="form-group" style="margin: 0;">
+                <label>السعر</label>
+                <input type="number" class="form-control price-input" step="0.01" readonly>
+            </div>
+            <div>
+                <button type="button" class="btn btn-danger" onclick="removeOrderItem(${itemCounter})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+        <div style="text-align: center; margin-top: 0.5rem;">
+            <strong>المجموع: <span class="item-total">0.00 ج.م</span></strong>
+        </div>
+    `;
+    
+    document.getElementById('orderItems').appendChild(itemDiv);
+    updateOrderSummary();
+}
+
+function removeOrderItem(itemId) {
+    const itemDiv = document.getElementById(`item_${itemId}`);
+    if (itemDiv) {
+        itemDiv.remove();
+        updateOrderSummary();
+    }
+}
+
+function updateItemPrice(itemId) {
+    const itemDiv = document.getElementById(`item_${itemId}`);
+    const productSelect = itemDiv.querySelector('.product-select');
+    const priceInput = itemDiv.querySelector('.price-input');
+    const quantityInput = itemDiv.querySelector('.quantity-input');
+    
+    const selectedOption = productSelect.options[productSelect.selectedIndex];
+    if (selectedOption.value) {
+        const price = parseFloat(selectedOption.dataset.price);
+        const stock = parseInt(selectedOption.dataset.stock);
+        
+        priceInput.value = price.toFixed(2);
+        quantityInput.max = stock;
+        
+        if (parseInt(quantityInput.value) > stock) {
+            quantityInput.value = stock;
+        }
+        
+        updateItemTotal(itemId);
+    } else {
+        priceInput.value = '';
+        updateItemTotal(itemId);
+    }
+}
+
+function updateItemTotal(itemId) {
+    const itemDiv = document.getElementById(`item_${itemId}`);
+    const quantity = parseInt(itemDiv.querySelector('.quantity-input').value) || 0;
+    const price = parseFloat(itemDiv.querySelector('.price-input').value) || 0;
+    const total = quantity * price;
+    
+    itemDiv.querySelector('.item-total').textContent = total.toFixed(2) + ' ج.م';
+    updateOrderSummary();
+}
+
+function updateOrderSummary() {
+    const items = document.querySelectorAll('.order-item');
+    let totalAmount = 0;
+    let summaryHtml = '';
+    const itemsData = [];
+    
+    items.forEach((item, index) => {
+        const productSelect = item.querySelector('.product-select');
+        const quantity = parseInt(item.querySelector('.quantity-input').value) || 0;
+        const price = parseFloat(item.querySelector('.price-input').value) || 0;
+        const total = quantity * price;
+        
+        if (productSelect.value && quantity > 0) {
+            const productName = productSelect.options[productSelect.selectedIndex].text;
+            totalAmount += total;
+            
+            summaryHtml += `
+                <div style="display: flex; justify-content: between; padding: 0.5rem 0; border-bottom: 1px solid #eee;">
+                    <div style="flex: 1;">
+                        <strong>${productName.split(' - ')[0]}</strong><br>
+                        <small>${quantity} × ${price.toFixed(2)} ج.م</small>
+                    </div>
+                    <div style="font-weight: bold;">${total.toFixed(2)} ج.م</div>
+                </div>
+            `;
+            
+            itemsData.push({
+                product_id: productSelect.value,
+                quantity: quantity,
+                unit_price: price
+            });
+        }
+    });
+    
+    const summaryDiv = document.getElementById('orderSummary');
+    const summaryContent = document.getElementById('summaryContent');
+    const totalAmountSpan = document.getElementById('totalAmount');
+    
+    if (itemsData.length > 0) {
+        summaryDiv.style.display = 'block';
+        summaryContent.innerHTML = summaryHtml;
+        totalAmountSpan.textContent = totalAmount.toFixed(2) + ' ج.م';
+    } else {
+        summaryDiv.style.display = 'none';
+    }
+    
+    document.getElementById('itemsData').value = JSON.stringify(itemsData);
+}
+
+function resetForm() {
+    document.getElementById('orderItems').innerHTML = '';
+    document.getElementById('orderSummary').style.display = 'none';
+    itemCounter = 0;
+}
+
+// إضافة صنف افتراضي عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    addOrderItem();
+    
+    // التحقق من صحة النموذج قبل الإرسال
+    document.getElementById('orderForm').addEventListener('submit', function(e) {
+        const customerId = document.getElementById('customer_id').value;
+        const itemsData = JSON.parse(document.getElementById('itemsData').value || '[]');
+        
+        if (!customerId) {
+            alert('يرجى اختيار العميل');
+            e.preventDefault();
+            return;
+        }
+        
+        if (itemsData.length === 0) {
+            alert('يرجى إضافة صنف واحد على الأقل');
+            e.preventDefault();
+            return;
+        }
+        
+        // التحقق من توفر المخزون
+        for (let item of itemsData) {
+            const product = products.find(p => p.id == item.product_id);
+            if (product && item.quantity > product.stock_quantity) {
+                alert(`الكمية المطلوبة من ${product.name} غير متوفرة. المتوفر: ${product.stock_quantity}`);
+                e.preventDefault();
+                return;
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
