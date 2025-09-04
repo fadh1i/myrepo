@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}نظام إدارة الأعمال{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    {% if current_user.is_authenticated %}
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-building"></i>
+                    نظام إدارة الأعمال
+                </div>
+                
+                <nav>
+                    <ul class="nav-links">
+                        <li><a href="{{ url_for('index') }}"><i class="fas fa-home"></i> الرئيسية</a></li>
+                        <li><a href="{{ url_for('customers') }}"><i class="fas fa-users"></i> العملاء</a></li>
+                        <li><a href="{{ url_for('products') }}"><i class="fas fa-box"></i> المنتجات</a></li>
+                        <li><a href="{{ url_for('orders') }}"><i class="fas fa-shopping-cart"></i> الطلبات</a></li>
+                    </ul>
+                </nav>
+                
+                <div class="user-info">
+                    <span>أهلاً، {{ current_user.full_name }}</span>
+                    <a href="{{ url_for('logout') }}" class="btn btn-danger">
+                        <i class="fas fa-sign-out-alt"></i> خروج
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+    {% endif %}
+
+    <main class="main-content">
+        <div class="container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="alerts">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'error' if category == 'error' else category }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

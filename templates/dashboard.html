@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}لوحة التحكم - نظام إدارة الأعمال{% endblock %}
+
+{% block content %}
+<h1 class="page-title">
+    <i class="fas fa-tachometer-alt"></i>
+    لوحة التحكم
+</h1>
+
+<!-- بطاقات الإحصائيات السريعة -->
+<div class="cards-grid">
+    <div class="card">
+        <div class="card-icon">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="card-title">إجمالي العملاء</div>
+        <div class="card-value">{{ total_customers }}</div>
+    </div>
+    
+    <div class="card">
+        <div class="card-icon">
+            <i class="fas fa-box"></i>
+        </div>
+        <div class="card-title">إجمالي المنتجات</div>
+        <div class="card-value">{{ total_products }}</div>
+    </div>
+    
+    <div class="card">
+        <div class="card-icon">
+            <i class="fas fa-shopping-cart"></i>
+        </div>
+        <div class="card-title">إجمالي الطلبات</div>
+        <div class="card-value">{{ total_orders }}</div>
+    </div>
+    
+    <div class="card">
+        <div class="card-icon">
+            <i class="fas fa-clock"></i>
+        </div>
+        <div class="card-title">الطلبات المعلقة</div>
+        <div class="card-value">{{ pending_orders }}</div>
+    </div>
+</div>
+
+<!-- الرسم البياني للمبيعات -->
+<div class="chart-container">
+    <h2 style="margin-bottom: 1rem; color: #667eea;">
+        <i class="fas fa-chart-line"></i>
+        المبيعات اليومية - آخر 7 أيام
+    </h2>
+    <div id="sales-chart" style="height: 400px;"></div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
+    <!-- المنتجات منخفضة المخزون -->
+    <div class="sidebar">
+        <h3 class="sidebar-title">
+            <i class="fas fa-exclamation-triangle"></i>
+            منتجات منخفضة المخزون
+        </h3>
+        {% if low_stock_products %}
+            <ul class="sidebar-list">
+                {% for product in low_stock_products %}
+                <li class="stock-warning">
+                    <strong>{{ product.name }}</strong><br>
+                    <span class="low-stock">المخزون: {{ product.stock_quantity }}</span>
+                    (الحد الأدنى: {{ product.min_stock_level }})
+                </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>جميع المنتجات في مستوى مخزون جيد 👍</p>
+        {% endif %}
+    </div>
+
+    <!-- الطلبات الأخيرة -->
+    <div class="sidebar">
+        <h3 class="sidebar-title">
+            <i class="fas fa-history"></i>
+            آخر الطلبات
+        </h3>
+        {% if recent_orders %}
+            <ul class="sidebar-list">
+                {% for order in recent_orders %}
+                <li>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>طلب #{{ order.id }}</strong><br>
+                            {{ order.customer.name }}<br>
+                            <small>{{ order.order_date.strftime('%Y-%m-%d %H:%M') }}</small>
+                        </div>
+                        <div>
+                            <div class="status status-{{ order.status }}">{{ order.status }}</div>
+                            <div style="font-weight: bold;">{{ "%.2f"|format(order.total_amount) }} ج.م</div>
+                        </div>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>لا توجد طلبات بعد</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- أزرار الإجراءات السريعة -->
+<div style="text-align: center; margin-top: 3rem;">
+    <h3 style="margin-bottom: 1rem; color: #333;">إجراءات سريعة</h3>
+    <div class="d-flex justify-content-center gap-2" style="flex-wrap: wrap;">
+        <a href="{{ url_for('add_customer') }}" class="btn btn-success">
+            <i class="fas fa-user-plus"></i>
+            إضافة عميل جديد
+        </a>
+        <a href="{{ url_for('add_product') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i>
+            إضافة منتج جديد
+        </a>
+        <a href="{{ url_for('add_order') }}" class="btn btn-warning">
+            <i class="fas fa-shopping-cart"></i>
+            إنشاء طلب جديد
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// رسم بياني للمبيعات اليومية
+fetch('/api/dashboard_data')
+    .then(response => response.json())
+    .then(data => {
+        const dates = data.daily_sales.map(item => item.date);
+        const sales = data.daily_sales.map(item => item.total);
+        
+        const trace = {
+            x: dates,
+            y: sales,
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'المبيعات اليومية',
+            line: {
+                color: '#667eea',
+                width: 3
+            },
+            marker: {
+                color: '#667eea',
+                size: 8
+            }
+        };
+        
+        const layout = {
+            title: {
+                text: 'المبيعات اليومية (جنيه مصري)',
+                font: {
+                    family: 'Arial, sans-serif',
+                    size: 16
+                }
+            },
+            xaxis: {
+                title: 'التاريخ',
+                type: 'date'
+            },
+            yaxis: {
+                title: 'المبيعات (ج.م)'
+            },
+            margin: {
+                l: 60,
+                r: 20,
+                t: 60,
+                b: 60
+            },
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: {
+                family: 'Arial, sans-serif'
+            }
+        };
+        
+        const config = {
+            displayModeBar: false,
+            responsive: true
+        };
+        
+        Plotly.newPlot('sales-chart', [trace], layout, config);
+    })
+    .catch(error => {
+        console.error('خطأ في تحميل بيانات الرسم البياني:', error);
+        document.getElementById('sales-chart').innerHTML = '<p style="text-align: center; color: #666;">خطأ في تحميل بيانات المبيعات</p>';
+    });
+</script>
+{% endblock %}

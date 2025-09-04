@@ -7,3 +7,12 @@ nbval
 click
 flask
 requests
+flask-sqlalchemy
+flask-migrate
+flask-login
+flask-wtf
+wtforms
+bcrypt
+plotly
+jinja2
+python-dateutil
